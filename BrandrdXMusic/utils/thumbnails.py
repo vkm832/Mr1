@@ -6,7 +6,7 @@ import aiofiles
 import aiohttp
 
 from PIL import Image, ImageDraw, ImageEnhance
-from PIL import ImageFilter, ImageFont, ImageOps
+from PIL import ImageFont, ImageOps
 
 from unidecode import unidecode
 from youtubesearchpython.__future__ import VideosSearch
@@ -68,63 +68,41 @@ async def get_thumb(videoid):
                     await f.write(await resp.read())
                     await f.close()
 
-        
-        colors = ["white", "red", "orange", "yellow", "green", "cyan", "azure", "blue", "violet", "magenta", "pink"]
+        # 🎨 Professional Styling Start
+        colors = ["#FF0000", "#00FF00", "#0000FF", "#FF00FF", "#00FFFF", "#FFA500"]
         border = random.choice(colors)
+
         youtube = Image.open(f"cache/thumb{videoid}.png")
         image1 = changeImageSize(1280, 720, youtube)
-        bg_bright = ImageEnhance.Brightness(image1)
-        bg_logo = bg_bright.enhance(1.1)
-        bg_contra = ImageEnhance.Contrast(bg_logo)
-        bg_logo = bg_contra.enhance(1.1)
-        logox = ImageOps.expand(bg_logo, border=7, fill=f"{border}")
-        background = changeImageSize(1280, 720, logox)
-        # image2 = image1.convert("RGBA")
-        # background = image2.filter(filter=ImageFilter.BoxBlur(1))
-        #enhancer = ImageEnhance.Brightness(background)
-        #background = enhancer.enhance(0.9)
-        #draw = ImageDraw.Draw(background)
-        #arial = ImageFont.truetype("BrandrdXMusic/assets/font2.ttf", 30)
-        #font = ImageFont.truetype("BrandrdXMusic/assets/font.ttf", 30)
-        # draw.text((1110, 8), unidecode(app.name), fill="white", font=arial)
-        """
-        draw.text(
-            (1, 1),
-            f"{channel} | {views[:23]}",
-            (1, 1, 1),
-            font=arial,
-        )
-        draw.text(
-            (1, 1),
-            clear(title),
-            (1, 1, 1),
-            font=font,
-        )
-        draw.line(
-            [(1, 1), (1, 1)],
-            fill="white",
-            width=1,
-            joint="curve",
-        )
-        draw.ellipse(
-            [(1, 1), (2, 1)],
-            outline="white",
-            fill="white",
-            width=1,
-        )
-        draw.text(
-            (1, 1),
-            "00:00",
-            (1, 1, 1),
-            font=arial,
-        )
-        draw.text(
-            (1, 1),
-            f"{duration[:23]}",
-            (1, 1, 1),
-            font=arial,
-        )
-        """
+
+        # Brightness + Contrast adjust
+        bg_bright = ImageEnhance.Brightness(image1).enhance(1.1)
+        bg_logo = ImageEnhance.Contrast(bg_bright).enhance(1.1)
+
+        # Add border
+        background = ImageOps.expand(bg_logo, border=8, fill=border)
+
+        # Draw text
+        draw = ImageDraw.Draw(background)
+        title_font = ImageFont.truetype("BrandrdXMusic/assets/font.ttf", 50)
+        info_font = ImageFont.truetype("BrandrdXMusic/assets/font2.ttf", 35)
+        brand_font = ImageFont.truetype("BrandrdXMusic/assets/font2.ttf", 32)
+
+        # Song Title
+        song_title = clear(title)
+        if len(song_title) > 45:
+            song_title = song_title[:45] + "..."
+
+        draw.text((50, 50), f"🎶 {song_title}", fill="white", font=title_font)
+        draw.text((50, 130), f"⏱ Duration: {duration}", fill="#00FFFF", font=info_font)
+        draw.text((50, 180), f"📺 {channel}", fill="#FFD700", font=info_font)
+
+        # Branding bottom center
+        brand_text = f"Provided by {app.name}"
+        w, h = draw.textsize(brand_text, font=brand_font)
+        draw.text(((1280 - w) // 2, 660), brand_text, fill="#FF5733", font=brand_font)
+        # 🎨 Professional Styling End
+
         try:
             os.remove(f"cache/thumb{videoid}.png")
         except:
