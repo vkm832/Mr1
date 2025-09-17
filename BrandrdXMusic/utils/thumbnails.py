@@ -8,7 +8,7 @@ from PIL import (Image, ImageDraw, ImageEnhance, ImageFilter,
                  ImageFont, ImageOps)
 from youtubesearchpython.__future__ import VideosSearch
 
-from BRANDEDKING import app
+from BrandrdXMusic import app
 from config import YOUTUBE_IMG_URL
 
 
@@ -74,14 +74,14 @@ async def get_thumb(videoid):
         logo = ImageOps.expand(logo, border=15, fill="white")
         background.paste(logo, (50, 100))
         draw = ImageDraw.Draw(background)
-        font = ImageFont.truetype("BRANDEDKING/assets/font2.ttf", 40)
-        font2 = ImageFont.truetype("BRANDEDKING/assets/font2.ttf", 70)
-        arial = ImageFont.truetype("BRANDEDKING/assets/font2.ttf", 30)
-        name_font = ImageFont.truetype("BRANDEDKING/assets/font.ttf", 30)
+        font = ImageFont.truetype("BrandrdXMusic/assets/font2.ttf", 40)
+        font2 = ImageFont.truetype("BrandrdXMusic/assets/font2.ttf", 70)
+        arial = ImageFont.truetype("BrandrdXMusic/assets/font2.ttf", 30)
+        name_font = ImageFont.truetype("BrandrdXMusic/assets/font.ttf", 30)
         para = textwrap.wrap(title, width=32)
         j = 0
         draw.text(
-            (5, 5), f"{'BRANDED KING'}", fill="white", font=name_font
+            (5, 5), f"{'BrandrdXMusic'}", fill="white", font=name_font
         )
         draw.text(
             (600, 150),
