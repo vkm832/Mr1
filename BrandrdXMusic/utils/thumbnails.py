@@ -1,14 +1,14 @@
 import os
 import re
-import random
+import textwrap
+
 import aiofiles
 import aiohttp
-
-from PIL import Image, ImageDraw, ImageEnhance, ImageFont, ImageOps
-from unidecode import unidecode
+from PIL import (Image, ImageDraw, ImageEnhance, ImageFilter,
+                 ImageFont, ImageOps)
 from youtubesearchpython.__future__ import VideosSearch
 
-from BrandrdXMusic import app
+from BRANDEDKING import app
 from config import YOUTUBE_IMG_URL
 
 
@@ -20,15 +20,6 @@ def changeImageSize(maxWidth, maxHeight, image):
     return image.resize((newWidth, newHeight))
 
 
-def clear(text):
-    parts = text.split(" ")
-    title = ""
-    for i in parts:
-        if len(title) + len(i) < 60:
-            title += " " + i
-    return title.strip()
-
-
 async def get_thumb(videoid):
     if os.path.isfile(f"cache/{videoid}.png"):
         return f"cache/{videoid}.png"
@@ -37,60 +28,114 @@ async def get_thumb(videoid):
     try:
         results = VideosSearch(url, limit=1)
         for result in (await results.next())["result"]:
-            title = re.sub(r"\W+", " ", result.get("title", "Unsupported Title")).title()
-            duration = result.get("duration", "Unknown Mins")
+            try:
+                title = result["title"]
+                title = re.sub("\W+", " ", title)
+                title = title.title()
+            except:
+                title = "Unsupported Title"
+            try:
+                duration = result["duration"]
+            except:
+                duration = "Unknown Mins"
             thumbnail = result["thumbnails"][0]["url"].split("?")[0]
-            views = result.get("viewCount", {}).get("short", "Unknown Views")
-            channel = result.get("channel", {}).get("name", "Unknown Channel")
+            try:
+                views = result["viewCount"]["short"]
+            except:
+                views = "Unknown Views"
+            try:
+                channel = result["channel"]["name"]
+            except:
+                channel = "Unknown Channel"
 
-        # Download YouTube thumbnail
         async with aiohttp.ClientSession() as session:
             async with session.get(thumbnail) as resp:
                 if resp.status == 200:
-                    f = await aiofiles.open(f"cache/thumb{videoid}.png", mode="wb")
+                    f = await aiofiles.open(
+                        f"cache/thumb{videoid}.png", mode="wb"
+                    )
                     await f.write(await resp.read())
                     await f.close()
 
-        # Random border color
-        colors = ["#FF0000", "#00FF00", "#0000FF", "#FFD700", "#FF69B4", "#00FFFF"]
-        border = random.choice(colors)
-
         youtube = Image.open(f"cache/thumb{videoid}.png")
         image1 = changeImageSize(1280, 720, youtube)
-
-        # Enhance image
-        bg_bright = ImageEnhance.Brightness(image1).enhance(1.15)
-        bg_contra = ImageEnhance.Contrast(bg_bright).enhance(1.1)
-        logox = ImageOps.expand(bg_contra, border=8, fill=border)
-        background = changeImageSize(1280, 720, logox)
-
-        # Draw text
+        image2 = image1.convert("RGBA")
+        background = image2.filter(filter=ImageFilter.BoxBlur(30))
+        enhancer = ImageEnhance.Brightness(background)
+        background = enhancer.enhance(0.6)
+        Xcenter = youtube.width / 2
+        Ycenter = youtube.height / 2
+        x1 = Xcenter - 250
+        y1 = Ycenter - 250
+        x2 = Xcenter + 250
+        y2 = Ycenter + 250
+        logo = youtube.crop((x1, y1, x2, y2))
+        logo.thumbnail((520, 520), Image.LANCZOS)
+        logo = ImageOps.expand(logo, border=15, fill="white")
+        background.paste(logo, (50, 100))
         draw = ImageDraw.Draw(background)
-        font_big = ImageFont.truetype("BrandrdXMusic/assets/font2.ttf", 40)
-        font_small = ImageFont.truetype("BrandrdXMusic/assets/font.ttf", 28)
+        font = ImageFont.truetype("BRANDEDKING/assets/font2.ttf", 40)
+        font2 = ImageFont.truetype("BRANDEDKING/assets/font2.ttf", 70)
+        arial = ImageFont.truetype("BRANDEDKING/assets/font2.ttf", 30)
+        name_font = ImageFont.truetype("BRANDEDKING/assets/font.ttf", 30)
+        para = textwrap.wrap(title, width=32)
+        j = 0
+        draw.text(
+            (5, 5), f"{'BRANDED KING'}", fill="white", font=name_font
+        )
+        draw.text(
+            (600, 150),
+            "STARTED PLAYING",
+            fill="white",
+            stroke_width=2,
+            stroke_fill="white",
+            font=font2,
+        )
+        for line in para:
+            if j == 1:
+                j += 1
+                draw.text(
+                    (600, 340),
+                    f"{line}",
+                    fill="white",
+                    stroke_width=1,
+                    stroke_fill="white",
+                    font=font,
+                )
+            if j == 0:
+                j += 1
+                draw.text(
+                    (600, 280),
+                    f"{line}",
+                    fill="white",
+                    stroke_width=1,
+                    stroke_fill="white",
+                    font=font,
+                )
 
-        # Title
-        draw.text((30, 600), clear(title), fill="white", font=font_big)
-
-        # Channel + Views
-        draw.text((30, 650), f"{channel} • {views}", fill="white", font=font_small)
-
-        # Duration
-        draw.text((1100, 650), f"⏱ {duration}", fill="white", font=font_small)
-
-        # Footer branding
-        footer_text = f"Provided by {unidecode(app.name)}"
-        draw.text((30, 20), footer_text, fill=border, font=font_small)
-
-        # Save final
+        draw.text(
+            (600, 450),
+            f"Views : {views[:23]}",
+            (255, 255, 255),
+            font=arial,
+        )
+        draw.text(
+            (600, 500),
+            f"Duration : {duration[:23]} Mins",
+            (255, 255, 255),
+            font=arial,
+        )
+        draw.text(
+            (600, 550),
+            f"Channel : {channel}",
+            (255, 255, 255),
+            font=arial,
+        )
         try:
             os.remove(f"cache/thumb{videoid}.png")
         except:
             pass
-
         background.save(f"cache/{videoid}.png")
         return f"cache/{videoid}.png"
-
-    except Exception as e:
-        print(f"[Thumbnail Error]: {e}")
+    except Exception:
         return YOUTUBE_IMG_URL
